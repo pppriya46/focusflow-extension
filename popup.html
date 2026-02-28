@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FocusFlow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fdf6f0;
+    --surface: #fff8f3;
+    --border: #e8d5c4;
+    --accent: #d4829a;
+    --accent2: #a0856e;
+    --danger: #c0624f;
+    --text: #4a3728;
+    --muted: #a08070;
+    --radius: 12px;
+  }
+
+  body {
+    width: 320px;
+    background: var(--bg);
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4829a' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: 'Lora', serif;
+    font-size: 18px;
+    font-weight: 600;
+    font-style: italic;
+    letter-spacing: 0.3px;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text); }
+  .dashboard-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Nunito', sans-serif;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .dashboard-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .session-card {
+    margin: 14px;
+    background: #fff0e8;
+    border: 1px solid #e8d0be;
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  .session-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .timer {
+    font-family: 'Lora', serif;
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+    transition: color 0.3s;
+  }
+  .timer.idle { color: #c9a99a; }
+
+  .duration-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .dur-btn {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    padding: 6px 0;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .dur-btn.active, .dur-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(212,130,154,0.08);
+  }
+
+
+  .main-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 24px;
+    border: none;
+    font-family: 'Lora', serif;
+    font-size: 13px;
+    font-weight: 600;
+    font-style: italic;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .main-btn.start {
+    background: var(--accent);
+    color: #fff8f3;
+  }
+  .main-btn.start:hover { background: #c0708a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(212,130,154,0.3); }
+  .main-btn.stop {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+  }
+  .main-btn.stop:hover { background: rgba(192,98,79,0.08); }
+
+  .progress-wrap {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 1s linear;
+  }
+
+
+  .sites-section {
+    margin: 0 14px 14px;
+  }
+  .section-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .add-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .site-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    padding: 7px 10px;
+    border-radius: 20px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .site-input::placeholder { color: var(--muted); }
+  .site-input:focus { border-color: var(--accent); }
+
+  .add-btn {
+    background: var(--accent);
+    border: none;
+    color: #fff8f3;
+    font-family: 'Lora', serif;
+    font-size: 18px;
+    font-weight: 600;
+    width: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+  .add-btn:hover { background: #c0708a; }
+
+  .sites-list { display: flex; flex-direction: column; gap: 5px; max-height: 130px; overflow-y: auto; }
+  .site-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    animation: slideIn 0.15s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+  .site-name { color: var(--text); font-size: 12px; }
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.15s;
+  }
+  .remove-btn:hover { color: var(--danger); }
+
+  .empty-sites {
+    color: var(--muted);
+    font-size: 11px;
+    text-align: center;
+    padding: 12px;
+  }
+
+
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #c9a99a;
+    display: inline-block;
+    margin-right: 6px;
+    transition: background 0.3s;
+  }
+  .status-dot.active { background: var(--accent); box-shadow: 0 0 6px rgba(212,130,154,0.5); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .scrollbar-thin::-webkit-scrollbar { width: 3px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Focus<span>Flow</span></div>
+  <button class="dashboard-btn" id="dashBtn">stats →</button>
+</div>
+
+<div class="session-card">
+  <div class="session-label">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">ready to focus</span>
+  </div>
+
+  <div class="timer idle" id="timer">00:00</div>
+
+  <div class="duration-row" id="durationRow">
+    <button class="dur-btn active" data-mins="25">25m</button>
+    <button class="dur-btn" data-mins="45">45m</button>
+    <button class="dur-btn" data-mins="60">60m</button>
+    <button class="dur-btn" data-mins="90">90m</button>
+  </div>
+
+  <button class="main-btn start" id="mainBtn">START SESSION</button>
+
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+</div>
+
+<div class="sites-section">
+  <div class="section-label">blocked sites</div>
+  <div class="add-row">
+    <input class="site-input" id="siteInput" placeholder="youtube.com" type="text" />
+    <button class="add-btn" id="addBtn">+</button>
+  </div>
+  <div class="sites-list scrollbar-thin" id="sitesList"></div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

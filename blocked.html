@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Blocked — FocusFlow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=Nunito:wght@400;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #fdf6f0;
+    background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d4829a' fill-opacity='0.05'%3E%3Cpath d='M40 0C18 0 0 18 0 40s18 40 40 40 40-18 40-40S62 0 40 0zm0 6c18.8 0 34 15.2 34 34S58.8 74 40 74 6 58.8 6 40 21.2 6 40 6z'/%3E%3C/g%3E%3C/svg%3E");
+    color: #4a3728;
+    font-family: 'Nunito', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at top, rgba(212,130,154,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at bottom, rgba(160,133,110,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .card {
+    text-align: center;
+    max-width: 480px;
+    padding: 60px 48px;
+    background: #fff8f3;
+    border: 1px solid #e8d5c4;
+    border-radius: 24px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 8px 32px rgba(212,130,154,0.12);
+  }
+
+  .icon {
+    font-size: 52px;
+    margin-bottom: 20px;
+    animation: bob 2s ease-in-out infinite;
+  }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+  h1 {
+    font-family: 'Lora', serif;
+    font-size: 32px;
+    font-weight: 600;
+    font-style: italic;
+    color: #d4829a;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+
+  .blocked-site {
+    font-size: 13px;
+    color: #a08070;
+    margin-bottom: 28px;
+    padding: 8px 16px;
+    background: #fdf6f0;
+    border: 1px solid #e8d5c4;
+    border-radius: 20px;
+    display: inline-block;
+  }
+
+  .message {
+    font-size: 14px;
+    color: #8a6a5a;
+    line-height: 1.8;
+    margin-bottom: 36px;
+  }
+
+  .timer-display {
+    font-family: 'Lora', serif;
+    font-size: 48px;
+    font-weight: 600;
+    color: #d4829a;
+    letter-spacing: -2px;
+    margin-bottom: 8px;
+  }
+
+  .timer-label {
+    font-size: 11px;
+    color: #a08070;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 36px;
+  }
+
+  .back-btn {
+    background: transparent;
+    border: 1px solid #e8d5c4;
+    color: #a08070;
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    padding: 10px 24px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .back-btn:hover { border-color: #d4829a; color: #d4829a; }
+
+  .no-session {
+    font-size: 13px;
+    color: #a08070;
+    margin-bottom: 28px;
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="card">
+  <div class="icon">🌸</div>
+  <h1>Rest can wait.</h1>
+  <div class="blocked-site" id="siteDisplay">this site is blocked</div>
+
+  <div id="sessionInfo">
+    <div class="timer-display" id="timerDisplay">--:--</div>
+    <div class="timer-label">remaining in session</div>
+    <p class="message">You blocked this site to protect your focus.<br>Keep going — you're doing great.</p>
+  </div>
+
+  <div id="noSession" style="display:none">
+    <p class="no-session">This site is on your blocklist.<br>Start a focus session in the extension to track your time.</p>
+  </div>
+
+  <a href="javascript:history.back()" class="back-btn">← go back</a>
+</div>
+
+<script>
+  // Show the blocked site
+  const params = new URLSearchParams(window.location.search);
+  const attempted = params.get('attempted') || document.referrer;
+  if (attempted) {
+    try {
+      const host = new URL(attempted.startsWith('http') ? attempted : 'https://' + attempted).hostname.replace('www.', '');
+      document.getElementById('siteDisplay').textContent = host;
+    } catch(e) {
+      document.getElementById('siteDisplay').textContent = attempted;
+    }
+  }
+
+  if (attempted) {
+    chrome.storage.local.get('attempts', ({ attempts = {} }) => {
+      const key = attempted;
+      attempts[key] = (attempts[key] || 0) + 1;
+      chrome.storage.local.set({ attempts });
+    });
+  }
+
+  chrome.storage.local.get(['sessionActive', 'sessionStart', 'sessionDuration'], (data) => {
+    if (!data.sessionActive) {
+      document.getElementById('sessionInfo').style.display = 'none';
+      document.getElementById('noSession').style.display = 'block';
+      return;
+    }
+
+    function tick() {
+      const elapsed = Math.floor((Date.now() - data.sessionStart) / 1000);
+      const total = data.sessionDuration * 60;
+      const remaining = Math.max(total - elapsed, 0);
+      const m = Math.floor(remaining / 60).toString().padStart(2, '0');
+      const s = (remaining % 60).toString().padStart(2, '0');
+      document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+    }
+    tick();
+    setInterval(tick, 1000);
+  });
+</script>
+</body>
+</html>
